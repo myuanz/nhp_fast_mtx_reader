@@ -140,9 +140,9 @@ class BatchSampleReader:
     >>> reader = BatchSampleReader(Path('/mnt/112-rawdata-112/output/macaque-20241203/'))
     >>> print(reader)
     BatchSampleReader(root=/mnt/112-rawdata-112/output/macaque-20241203, meta=SampleMeta(species=macaque, version=20241203, index_files=/mnt/112-rawdata-112/macaque/snRNA/all-files-20240826.txt, files=39, export_time=2024-12-03 16:16:28 ~ 2024-12-03 16:16:35))
-    >>> adata = reader.read(verbose=False)
+    >>> adatas = reader.read(verbose=False)
     100%|███████████████████████████████████████████████████████████████████████████████████████████| 39/39 [00:15<00:00,  2.44it/s, 80T73-2-210420]
-    >>> print(adata)
+    >>> print(adatas)
     [AnnData object with n_obs × n_vars = 2048 × 19140
     uns: 'sample_name', '105T85-1-210422', AnnData object with n_obs × n_vars = 2123 × 19194
     uns: 'sample_name', '105T85-2-210422', AnnData object with n_obs × n_vars = 1588 × 18800
@@ -237,5 +237,5 @@ class BatchSampleReader:
 if __name__ == '__main__':
     reader = BatchSampleReader.from_dir('/mnt/112-rawdata-112/output/macaque-20241203/')
     print(reader)
-    adata = reader.read(verbose=False)
-    print(adata)
+    adatas = reader.read(verbose=False)
+    print(adatas)
