@@ -206,7 +206,7 @@ class BatchSampleReader:
         if with_tqdm:
             from tqdm import tqdm
         else:
-            tqdm = lambda x: x
+            tqdm = lambda x, *args, **kwargs: x
 
         sample_meta_df = pl.read_excel(self.sample_meta_p)
 
