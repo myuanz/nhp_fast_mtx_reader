@@ -1,7 +1,7 @@
 [project]
 name = "fast_mtx_reader"
 version = "0.1.0"
-description = "给脑图谱平台自用的批量 mtx 读取器，包含内部格式的数据集描述"
+description = "给脑图谱平台自用的批量 mtx 读取器，包含内部格式的数据集格式解析"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
