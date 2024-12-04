@@ -1,4 +1,4 @@
-from fast_read_mtx import BatchSampleReader
+from fast_mtx_reader import BatchSampleReader
 
 def test_read():
     reader = BatchSampleReader('/mnt/112-rawdata-112/output/macaque-20241203/')
