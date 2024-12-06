@@ -217,6 +217,9 @@ class BatchSampleReader:
                 sample_p = self.root.joinpath(sample_name)
                 if (p := sample_p.joinpath('02.count/filter_matrix')).exists():
                     sample_p = p
+                if (p := sample_p.joinpath('filter_matrix')).exists():
+                    sample_p = p
+
                 if verbose:
                     print(f'Read {sample_name} from {sample_p}')
                 tasks_samples.append((
