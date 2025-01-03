@@ -1,4 +1,5 @@
 import gzip
+import warnings
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from json import load
@@ -213,11 +214,15 @@ class BatchSampleReader:
         adatas = []
         with ThreadPoolExecutor(n_jobs) as executor:
             tasks_samples = []
-            for sample_name in (sample_meta_df['文库编号']):
+            # for sample_name in (sample_meta_df['文库编号']):
+            for row_dic in sample_meta_df.iter_rows(named=True):
+                sample_name = row_dic['文库编号']
                 sample_p = self.root.joinpath(sample_name)
                 if (p := sample_p.joinpath('02.count/filter_matrix')).exists():
                     sample_p = p
                 if (p := sample_p.joinpath('filter_matrix')).exists():
+                    sample_p = p
+                if (p := sample_p.joinpath('Matrix')).exists():
                     sample_p = p
 
                 if verbose:
@@ -225,20 +230,45 @@ class BatchSampleReader:
                 tasks_samples.append((
                     executor.submit(read_sample_dir, sample_p, verbose=verbose),
                     sample_name,
+                    row_dic,
                 ))
 
-            for task, sample_name in (pbar := tqdm(tasks_samples, total=len(tasks_samples))):
+            for task, sample_name, row_dic in (
+                pbar := tqdm(tasks_samples, total=len(tasks_samples))
+            ):
                 adatas.append(task.result())
                 # 设置样本名
                 adatas[-1].uns['sample_name'] = sample_name
                 adatas[-1].uns[sample_name] = sample_name
+
+                for i, (k, v) in enumerate(row_dic.items()):
+                    if k is None:
+                        continue
+
+                    k = k.strip()
+                    if k in ['数据存放目录', 'sample_name', '文库编号']:
+                        if verbose:
+                            print(f'skip column {i} of {sample_name}: {k}')
+                        continue
+                    if k:
+                        adatas[-1].uns[k] = v
+                    else:
+                        warnings.warn(f'column {i} of {sample_name} is empty, row_dic: {row_dic}')
+
+                adatas[-1].uns['sample_name'] = sample_name
+                adatas[-1].uns[sample_name] = sample_name
+
                 if hasattr(pbar, 'set_postfix_str'):
                     pbar.set_postfix_str(f'{sample_name}')
 
         return adatas
 
+def batch_read(root: Path | str, *, verbose=False, with_tqdm=True, n_jobs=8):
+    reader = BatchSampleReader.from_dir(root)
+    if verbose:
+        print(reader)
+    return reader.read(verbose=verbose, with_tqdm=with_tqdm, n_jobs=n_jobs)
+
 if __name__ == '__main__':
-    reader = BatchSampleReader.from_dir('/mnt/112-rawdata-112/output/macaque-20241203/')
-    print(reader)
-    adatas = reader.read(verbose=False)
+    adatas = batch_read('/mnt/112-rawdata-112/output/macaque-20241223-motor-output/', verbose=False)
     print(adatas)
