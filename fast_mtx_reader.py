@@ -1,3 +1,4 @@
+# %%
 import gzip
 import warnings
 from concurrent.futures import ThreadPoolExecutor
@@ -75,7 +76,7 @@ def read_sample_dir(root: Path, verbose=False):
     }
 
     files = {
-        t: [find_file(root, base_name) for base_name in curr_base_names][0]
+        t: [f for base_name in curr_base_names if (f := find_file(root, base_name))][0]
         for t, curr_base_names in base_names.items()
     }
     if verbose:
@@ -203,7 +204,7 @@ class BatchSampleReader:
     def __repr__(self):
         return f'BatchSampleReader(root={self.root}, meta={self.meta})'
 
-    def read(self, verbose=False, with_tqdm=True, n_jobs=8):
+    def read(self, verbose=False, with_tqdm=True, n_jobs=8, add_sample_name_to_obs_index=True, add_to_obs=('sample_name', 'Animal')):
         if with_tqdm:
             from tqdm import tqdm
         else:
@@ -220,9 +221,13 @@ class BatchSampleReader:
                 sample_p = self.root.joinpath(sample_name)
                 if (p := sample_p.joinpath('02.count/filter_matrix')).exists():
                     sample_p = p
+                if (p := sample_p.joinpath('output/filter_matrix')).exists():
+                    sample_p = p
                 if (p := sample_p.joinpath('filter_matrix')).exists():
                     sample_p = p
                 if (p := sample_p.joinpath('Matrix')).exists():
+                    sample_p = p
+                if (p := sample_p.joinpath('04.Matrix')).exists():
                     sample_p = p
 
                 if verbose:
@@ -240,6 +245,9 @@ class BatchSampleReader:
                 # 设置样本名
                 adatas[-1].uns['sample_name'] = sample_name
                 adatas[-1].uns[sample_name] = sample_name
+                adatas[-1].obs['sample_name'] = sample_name
+                if add_sample_name_to_obs_index:
+                    adatas[-1].obs.index = sample_name + '#' + adatas[-1].obs.index.astype(str)
 
                 for i, (k, v) in enumerate(row_dic.items()):
                     if k is None:
@@ -252,6 +260,8 @@ class BatchSampleReader:
                         continue
                     if k:
                         adatas[-1].uns[k] = v
+                        if k in add_to_obs:
+                            adatas[-1].obs[k] = v
                     else:
                         warnings.warn(f'column {i} of {sample_name} is empty, row_dic: {row_dic}')
 
@@ -263,12 +273,18 @@ class BatchSampleReader:
 
         return adatas
 
-def batch_read(root: Path | str, *, verbose=False, with_tqdm=True, n_jobs=8):
+def batch_read(root: Path | str, *, verbose=False, with_tqdm=True, n_jobs=8, add_sample_name_to_obs_index=True, add_to_obs=('sample_name', 'Animal')):
     reader = BatchSampleReader.from_dir(root)
     if verbose:
         print(reader)
-    return reader.read(verbose=verbose, with_tqdm=with_tqdm, n_jobs=n_jobs)
+    return reader.read(
+        verbose=verbose,
+        with_tqdm=with_tqdm,
+        n_jobs=n_jobs,
+        add_sample_name_to_obs_index=add_sample_name_to_obs_index,
+        add_to_obs=add_to_obs,
+    )
 
 if __name__ == '__main__':
-    adatas = batch_read('/mnt/112-rawdata-112/output/macaque-20241223-motor-output/', verbose=False)
+    adatas = batch_read('/mnt/112-rawdata-112/output/macaque-20250106-cla/', verbose=True)
     print(adatas)
