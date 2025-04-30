@@ -1,6 +1,6 @@
 [project]
 name = "fast_mtx_reader"
-version = "0.3.0"
+version = "0.4.0"
 description = "给脑图谱平台自用的批量 mtx 读取器，包含内部格式的数据集格式解析"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -16,8 +16,13 @@ dependencies = [
 
 [tool.uv]
 dev-dependencies = [
+    "hatchling>=1.27.0",
+    "ipykernel>=6.29.5",
     "pytest>=8.3.4",
 ]
+
+[[tool.uv.index]]
+url = "https://pypi.tuna.tsinghua.edu.cn/simple/"
 
 [build-system]
 requires = ["hatchling"]
