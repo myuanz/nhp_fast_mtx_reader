@@ -5,6 +5,7 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from json import load
 from pathlib import Path
+from typing import Any
 
 import polars as pl
 from anndata import AnnData
@@ -75,10 +76,18 @@ def read_sample_dir(root: Path, verbose=False):
         },
     }
 
-    files = {
-        t: [f for base_name in curr_base_names if (f := find_file(root, base_name))][0]
-        for t, curr_base_names in base_names.items()
-    }
+    files: dict[str, Path] = {}
+    for t, curr_base_names in base_names.items():
+        found_files = [
+            f for base_name in curr_base_names 
+            if (f := find_file(root, base_name))
+        ]
+        if len(found_files) == 0:
+            raise ValueError(f'No matrix file found in `{root}` for file type:`{t}`')
+        elif len(found_files) > 1:
+            warnings.warn(f'Multiple matrix files found in `{root}` for file type:`{t}`: {found_files}')
+        files[t] = found_files[0]
+
     if verbose:
         print('Found files:', files)
     for base_name, file_path in files.items():
@@ -127,14 +136,16 @@ def read_sample_dir(root: Path, verbose=False):
 class SampleMeta:
     species: str
     version: str
-    index_files: str
     sample_file_name: str
     files: dict[str, str]
     start_time: str
     end_time: str
 
-    def __repr__(self):
-        return f'SampleMeta(species={self.species}, version={self.version}, index_files={self.index_files}, files={len(self.files)}, export_time={self.start_time} ~ {self.end_time})'
+    snapshot: dict[str, Any] | None = None
+    index_files: str | None = None
+    '''旧式代码里包含了索引文件，新式代码迁移到了快照'''
+    include_filter: str | None = None
+    exclude_filter: str | None = None
 
 class BatchSampleReader:
     '''批量读取样本
@@ -286,5 +297,7 @@ def batch_read(root: Path | str, *, verbose=False, with_tqdm=True, n_jobs=8, add
     )
 
 if __name__ == '__main__':
-    adatas = batch_read('/mnt/112-rawdata-112/output/macaque-20250106-cla/', verbose=True)
+    adatas = batch_read('/mnt/112-rawdata-112/output/macaque-20250508-DR/', verbose=True)
+    # adatas = batch_read('/mnt/112-rawdata-112/output/macaque-20250106-cla/', verbose=True)
+
     print(adatas)
